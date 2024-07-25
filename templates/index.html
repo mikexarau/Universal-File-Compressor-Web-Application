@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Aplicación de compresión de archivos</title>
+    <style>
+        .dropzone {
+            width: 300px;
+            height: 200px;
+            border: 2px dashed #aaa;
+            color: #aaa;
+            line-height: 200px;
+            text-align: center;
+        }
+
+        .dropzone.dragover {
+            border-color: #66b3ff;
+            color: #66b3ff;
+            background-color: rgba(102, 179, 255, 0.5);
+        }
+
+        .dropzone.success {
+            background-color: blue;
+            color: white;
+        }
+
+        .dropzone.compressing {
+            background-color: green;
+            color: white;
+        }
+
+        .dropzone.dragging {
+            border-color: #66b3ff;
+            color: #66b3ff;
+            background-color: rgba(102, 179, 255, 0.3);
+        }
+
+        #error-message {
+            color: red;
+            display: none;
+        }
+
+        #progress-bar {
+            width: 0;
+            height: 20px;
+            background-color: #4CAF50;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>¡Bienvenido a la aplicación de compresión de archivos!</h1>
+    <form id="upload-form" action="/upload" method="post" enctype="multipart/form-data">
+        <div id="dropzone" class="dropzone">Arrastra un archivo aquí o <button type="button" id="fileButton">Selecciona un archivo</button></div>
+        <input type="file" id="fileInput" style="display:none;">
+
+        <label for="scale">Escala:</label><br>
+        <input type="range" id="scale" name="scale" min="1" max="100" oninput="updateOutput('scale-output', this.value)">
+        <output id="scale-output">50%</output><br>
+
+        <label for="quality">Calidad:</label><br>
+        <input type="range" id="quality" name="quality" min="1" max="95" oninput="updateOutput('quality-output', this.value)">
+        <output id="quality-output">50</output><br>
+
+        <label for="format">Formato de salida:</label><br>
+        <select name="format" id="format" style="display: none;"></select><br>
+
+        <input type="submit" value="Comprimir archivo">
+    </form>
+
+    <div id="progress-bar">0%</div>
+    <p id="error-message"></p>
+    <a id="download-link" href="#" download style="display: none; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px;">Descargar archivo comprimido</a>
+
+    <script>
+        var dropzone = document.getElementById('dropzone');
+        var form = document.getElementById('upload-form');
+        var downloadLink = document.getElementById('download-link');
+        var errorMessage = document.getElementById('error-message');
+        var droppedFile;
+
+        function updateOutput(id, value) {
+            document.getElementById(id).value = value + (id === 'scale-output' ? '%' : '');
+        }
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function highlight() {
+            dropzone.classList.add('dragging');
+        }
+
+        function unhighlight() {
+            dropzone.classList.remove('dragging');
+        }
+
+        function handleDrop(e) {
+            var dt = e.dataTransfer;
+            var file = dt.files[0];
+            if (file) {
+                handleFile(file);
+            } else {
+                errorMessage.textContent = "Tipo de archivo no soportado o no se proporcionó ningún archivo.";
+                errorMessage.style.display = 'block';
+            }
+        }
+
+        function handleFile(file) {
+            droppedFile = file;
+            dropzone.textContent = "Archivo añadido: " + file.name;
+            dropzone.classList.add('success');
+        }
+
+        downloadLink.addEventListener('click', function(e) {
+            resetUI();
+        });
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            var formData = new FormData();
+            formData.append('file', droppedFile);
+            formData.append('scale', document.getElementById('scale').value);
+            formData.append('quality', document.getElementById('quality').value);
+            formData.append('format', document.getElementById('format').value);
+
+            dropzone.textContent = "Comprimiendo archivo...";
+            dropzone.classList.add('compressing');
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.text())
+            .then(filename => {
+                if (filename) {
+                    downloadLink.href = '/downloads/' + encodeURIComponent(filename);
+                    downloadLink.style.display = 'block';
+                } else {
+                    errorMessage.textContent = 'Error en la respuesta del servidor. Inténtalo de nuevo.';
+                    errorMessage.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                errorMessage.textContent = 'Ocurrió un error al comprimir el archivo. Inténtalo de nuevo.';
+                errorMessage.style.display = 'block';
+            });
+        });
+
+        dropzone.addEventListener('click', function() {
+            document.getElementById('fileInput').click();
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function() {
+            if (this.files && this.files.length > 0) {
+                handleFile(this.files[0]);
+            }
+        });
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, unhighlight, false);
+        });
+
+        dropzone.addEventListener('drop', handleDrop, false);
+
+		function resetUI() {
+			dropzone.textContent = "Arrastra un archivo aquí o selecciona un archivo";
+			dropzone.classList.remove('compressing', 'success');
+			document.getElementById('scale').value = 50;
+			document.getElementById('scale-output').value = '50%';
+			document.getElementById('quality').value = 85;
+			document.getElementById('quality-output').value = '85';
+			document.getElementById('format').innerHTML = '';
+			document.getElementById('format').style.display = 'none';
+			downloadLink.style.display = 'none';
+			droppedFile = null;
+        }
+
+    </script>
+</body>
+</html>
