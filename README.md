@@ -12,7 +12,7 @@ This project is a versatile web-based application designed to compress various t
 ## Installation
 Follow these steps to set up the project locally:
 1. Clone the repository: 
-git clone https://github.com/mikexarau/Universal-file-Compressor.git
+git clone https://github.com/mikexarau/Universal-file-Compressor-Web-Application.git
 
 2. Navigate to the project directory:
 cd Compresor-web-app
