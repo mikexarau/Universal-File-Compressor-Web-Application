@@ -1,5 +1,17 @@
+# Python
 __pycache__/
-build/
+*.pyc
+
+# Node.js
+node_modules/
+
+# Logs
 *.log
 
+# Entornos virtuales
+venv/
+.env
 
+# Build y distribución
+build/
+dist/
