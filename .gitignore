@@ -15,3 +15,6 @@ venv/
 # Build y distribución
 build/
 dist/
+
+# macOS
+.DS_Store
