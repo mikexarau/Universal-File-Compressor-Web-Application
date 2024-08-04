@@ -1,4 +1,4 @@
-# Contributing to [Universal File Compressor - Web Aplication ]
+# Contributing to [Universal File Compressor - Web Application ]
 
 Thank you for considering contributing to this project! Here are a few guidelines to get started.
 
